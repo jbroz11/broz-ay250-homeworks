@@ -1,0 +1,61 @@
+Your score: 22.5/24
+
+Breakdown & Comments: 
+
+----------------------------------------
+Coding Style: 3/4
+----------------------------------------
+1/1: git repo style
+0/1: code style
+1/1: notebook style
+1/1: code portability
+
+Code style -- 
+Please work on commenting your code so that we can understand the logic
+of your solutions.
+
+This is bad style:
+    np.fft.rfft = rfft
+    np.fft.irfft = irfft
+it doesn't even save you any lines! 
+Do
+    fft_array = np.fft.rfft(x)
+or 
+    from numpy.fft import rfft if you want
+
+
+----------------------------------------
+Problem 1: 6/6 
+----------------------------------------
+3/3: good attempt of each part
+3/3: successful execution of each part
+
+----------------------------------------
+Problem 2: 7/7
+----------------------------------------
+2/2: good attempt of parts 2 and 5
+5/5: successful completion of parts 1-5
+
+part 2 - technical/mathematical note: 
+the power spectrum (for finding the "smallest component") is fft_array**2
+
+----------------------------------------
+Problem 3: 1.5/2 
+----------------------------------------
+1.5/2: successful completion of year/lunar estimates
+
+your answers are ok but it's unclear how you chose your freq grid, 
+and why did you fit a gaussian instead of just using argmax()
+
+----------------------------------------
+Problem 4: 5/5 
+----------------------------------------
+1/1: understanding what is going on in the plot for part 1
+1/1: good attempt of part 1
+3/3: successful completion of parts 1-3
+
+Your solution to parts 2&3 is right-ish ... next time though think of
+a better way (for-loop/while statement) to execute it, to avoid having like five 
+cells per piece.
+
+Graded by C. E. Harris
