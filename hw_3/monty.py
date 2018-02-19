@@ -4,6 +4,9 @@ import houndify
 import smtplib
 import scrapy
 import random
+import sys
+import os
+import logging
 import my_credentials as mc
 
 from email.mime.multipart import MIMEMultipart
@@ -11,7 +14,8 @@ from email.mime.text import MIMEText
 from scrapy.crawler import CrawlerProcess
 from IPython.display import clear_output
 
-
+# Disable scrapy log output
+logging.getLogger('scrapy').propagate = False
 #####################################################################
 # This section inlcudes functions for transcribing audio to txt     #
 #####################################################################
@@ -38,6 +42,7 @@ def audio_to_txt(record_seconds=5):
     client.fill(b"".join(audio_data_list))
     result = client.finish()
     txt = result["AllResults"][0]["WrittenResponse"]
+    txt = txt.replace("ah no", "")  # Get this a lot for some reason
 
     clear_output()  # making notebook presentation nicer
 
@@ -91,7 +96,7 @@ def get_audio_clip(record_seconds, chunk=1024):
 
     p = pyaudio.PyAudio()
 
-    print("* start recording")
+    print("What can I help you with?\n* start recording")
     stream = p.open(format=audio_format,
                     channels=channels,
                     rate=rate,
@@ -210,12 +215,14 @@ def binary_operation(operation):
     modulo: "mod".
     '''
 
+    # Note: speech-to-txt isn't very good at correctly spelling 'mod'
     op_dict = {"times": lambda x,y: x * y,
                "divided by": lambda x, y: x / y,
                "plus": lambda x,y: x + y,
                "minus": lambda x,y: x - y,
                "mod": divmod}
 
+    operation = operation.replace("-", "minus ")
     op_list = operation.split(" ")
 
     # Some limited amount of user error prevention. If this condition isn't
@@ -260,7 +267,9 @@ def binary_operation(operation):
 # It seems like a little bit of overkill to scrape a website every
 # time a joke is requested. But I just wanted to demonstrate/practice
 # the capability. Maybe it makes more sense to just grab a single joke
-# randomly from the website or something like that?
+# randomly from the website or something like that? Also, the website
+# that I'm scraping isn't the best choice either since there aren't
+# a ton of jokes although presumably they're regularly updated.
 
 class joke_getter:
     '''
@@ -270,16 +279,17 @@ class joke_getter:
     which is returned as a string.
     '''
 
-    def __init__(self):
-        # Initialize the crawler with pipline for saving output as txt file
-        process = CrawlerProcess({'ITEM_PIPELINES':
-                                 {'monty.TxtWriterPipeline': 100}})
+    def __init__(self, run_crawler=True):
+        if run_crawler:
+            # Initialize the crawler with pipline for saving output as txt file
+            process = CrawlerProcess({'ITEM_PIPELINES':
+                                     {'monty.TxtWriterPipeline': 100}})
 
-        # Set the crawler to use the JokesSpider spider
-        process.crawl(JokesSpider)
+            # Set the crawler to use the JokesSpider spider
+            process.crawl(JokesSpider)
 
-        # start the process
-        process.start()
+            # start the process
+            process.start()
 
     def get_joke(self):
         '''
@@ -292,7 +302,11 @@ class joke_getter:
             for line in file.readlines():
                 # Sometimes the crawler grabs an empty string
                 if len(line) > 2:
-                    jokes_list.append(line.replace("\n", ""))
+                    # Doesn't fomat strings with this char well
+                    if "\xa0" not in line:
+                        line = line.replace("\u2028", "")
+                        line = line.replace("\n", "")
+                        jokes_list.append(line)
 
         return random.choice(jokes_list)
 
@@ -321,6 +335,7 @@ class JokesSpider(scrapy.Spider):
                   "https://www.rd.com/jokes/science-jokes/",
                   "https://www.rd.com/jokes/school-jokes/"
                   ]
+    custom_settings = {'LOG_LEVEL': 'CRITICAL'}
 
     def parse(self, response):
         for joke in response.css("div.content-wrapper"):
@@ -350,5 +365,60 @@ class TxtWriterPipeline(object):
 
 if __name__ == "__main__":
 
-    request = audio_to_txt()
+    # Prompt user ask a question and let them know when recording starts.
+    # Run speech-to-txt with houndify and return results.
+    # Provide the option to change the number of record seconds by using
+    # a command line argument.
+    if len(sys.argv) > 1:
+        request = audio_to_txt(int(sys.argv[1]))
+    else:
+        request = audio_to_txt()
 
+    # In the following, I will initiate a response based on the string
+    # contained in request. It seems easy to go down a rabbit hole
+    # trying to intelligently interpret exactly what the user is asking,
+    # so for now I am only going to ensure that this works provided that
+    # the user's question has been transcribed to text in the exact
+    # format as described in the problem description.
+
+    request = request.lower()  # convert to lowercase
+    # strip off first word since speech-to-text has trouble with 'monty'
+    request = request.split(" ", 1)[1]
+
+    s = request.split("email me with subject")
+    if len(s) > 1:
+        # Note: this won't work correctly if 'and body' shows up more than
+        # once in *request*.
+        subject, body = s[1].split("and body")
+        send_email(subject, body)
+        sys.exit()
+
+    s = request.split("calculate ")
+    if len(s) > 1:
+        # Another reminder, this will fail if request looks like: 'two times
+        # three' instead of '2 times 3'. To avoid this make sure you ask
+        # Monty something like 'two point zero times three point zero'.
+        binary_operation(s[1])
+        sys.exit()
+
+    if "tell me a joke" in request:
+        # Checks to see if we've already crawled for jokes
+        if os.path.isfile("items.txt"):
+            jokes = joke_getter(run_crawler=False)
+        else:
+            jokes = joke_getter()
+
+        print(jokes.get_joke())
+        sys.exit()
+
+    # If Monty can't parse the request, just return a joke instead.
+    print("Sorry, I didn't understand your request. Here's a joke instead:")
+    print()
+
+    # Checks to see if we've already crawled for jokes
+    if os.path.isfile("items.txt"):
+        jokes = joke_getter(run_crawler=False)
+    else:
+        jokes = joke_getter()
+
+    print(jokes.get_joke())
