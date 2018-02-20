@@ -2,3 +2,6 @@ my_credentials.py
 request.wav
 items.txt
 *.aif
+.ipynb_checkpoints/
+__MACOSX/
+__pycache__/
