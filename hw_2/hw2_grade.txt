@@ -1,0 +1,38 @@
+Your score: 14/17
+
+Breakdown & Comments: 
+
+-1 problems should be numbered and/or contained in one notebook
+-1 Comment. Your. Code.
+
+----------------------------------------
+Problem 1: 4/5
+----------------------------------------
+1/1: plot with caption
+3/4: analysis
+
+"The story being told here is of the effectiveness of sideband 
+cooling in bringing two ions down to their collective motional 
+ground state in both of their normal modes -- which surpasses 
+the Doppler limit." Stories have a beginning, middle, and end. 
+This is not a story.
+
+Also, you didn't note that the y-axis should have numbers; but 
+seriously it should.
+
+----------------------------------------
+Problem 2: 7/7
+----------------------------------------
+3/3: Recreated plot
+3/3: New dynamic interactions
+1/1: Analysis of changes
+
+Nice. Good thinking on the changes.
+
+----------------------------------------
+Problem 3: 5/5
+----------------------------------------
+5/5: Reproduced plot: title, twin_x, legend, limits, linestyles
+
+
+Graded by C. E. Harris
